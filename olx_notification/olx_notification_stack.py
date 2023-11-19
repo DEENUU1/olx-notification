@@ -11,6 +11,6 @@ class OlxNotificationStack(cdk.Stack):
             self,
             id="OlxNotification",
             code=aws_lambda.Code.from_asset("olx_notification/compute/"),
-            handler="scrape.lambda_handler",
+            handler="olx.lambda_handler",
             runtime=aws_lambda.Runtime.PYTHON_3_9
         )

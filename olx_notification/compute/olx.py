@@ -87,7 +87,7 @@ class GetOlxContent:
 
 def send_email(body: str, subject: str) -> None:
     message = f"Subject: {subject}\n\n{body}"
-
+    message = message.encode("utf-8")
     with smtplib.SMTP(smtp_server, smtp_port) as smtp:
         smtp.starttls()
         smtp.login(smtp_username, smtp_password)
@@ -142,7 +142,7 @@ def convert_time(time: str) -> datetime.datetime:
     return datetime.datetime.strptime(time, "%Y-%m-%dT%H:%M:%S%z")
 
 
-def scrape():
+def scrape() -> bool:
     for name, url_to_scrape in URLS_TO_SCRAPE.items():
         print(f"Start scraping {name}...")
         scraper = GetOlxContent(url_to_scrape)
@@ -159,10 +159,11 @@ def scrape():
             body += "\n\n\n"
 
         send_email(body=body, subject=name)
+    return True
 
 
 def lambda_handler(event, context):
     return {
         'statusCode': 200,
-        'body': json.dumps({"message": "Scraped"})
+        'body': json.dumps({"message": "Scraped", "status": scrape()})
     }
