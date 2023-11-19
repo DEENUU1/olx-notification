@@ -21,14 +21,6 @@ smtp_username = os.environ["SMTP_USERNAME"]
 smtp_password = os.environ["SMTP_PASSWORD"]
 from_email = os.environ["FROM_EMAIL"]
 to_email = os.environ["TO_EMAIL"]
-subject = "OLX scraper"
-
-
-def send_email(message: str) -> None:
-    with smtplib.SMTP(smtp_server, smtp_port) as smtp:
-        smtp.starttls()
-        smtp.login(smtp_username, smtp_password)
-        smtp.sendmail(from_email, to_email, message)
 
 
 @dataclass
@@ -93,6 +85,15 @@ class GetOlxContent:
         return None
 
 
+def send_email(body: str, subject: str) -> None:
+    message = f"Subject: {subject}\n\n{body}"
+
+    with smtplib.SMTP(smtp_server, smtp_port) as smtp:
+        smtp.starttls()
+        smtp.login(smtp_username, smtp_password)
+        smtp.sendmail(from_email, to_email, message)
+
+
 def parse_params(params) -> Tuple[List[Optional[Params]], Optional[Price]]:
     params_list = []
     price = None
@@ -148,9 +149,14 @@ def run():
         data = scraper.fetch_content()
         objects = parse_data(data)
 
-        for object in objects:
-            print(object)
-            print("\n\n")
+        body = ""
+        for idx, object_ in enumerate(objects):
+            body += f"{idx} {object_.title} - {object_.url} - {object_.created_time} \n"
+            body += f"Localization: {object_.city}, {object_.region}, {object_.district} \n"
+            body += f"Price: {object_.price.value} {object_.price.currency} \n"
+            params = "\n".join([f"{param.name}: {param.label}" for param in object_.params])
+            body += f"Params: {params} \n"
+            body += "\n\n\n"
 
-
+        print(body)
 run()
