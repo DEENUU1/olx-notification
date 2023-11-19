@@ -1,5 +1,5 @@
 import requests
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
 import json
 from dataclasses import dataclass
 import datetime
@@ -71,6 +71,29 @@ class GetOlxContent:
                 return next_page.get("href")
 
         return None
+
+
+def parse_params(params) -> Tuple[List[Optional[Params]], Optional[Price]]:
+    params_list = []
+    price = None
+
+    for param in params:
+        key, label = param["key"], param["value"]["label"]
+        if key == "price":
+            price = Price(
+                value=param["value"]["value"],
+                currency=param["value"]["currency"],
+                negotiable=param["value"]["negotiable"]
+            )
+
+        params_list.append(
+            Params(
+                name=key,
+                label=label
+            )
+        )
+
+    return params_list, price
 
 
 def parse_data(data: List[Dict]) -> List[Object]:
