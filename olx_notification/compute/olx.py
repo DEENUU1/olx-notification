@@ -76,11 +76,11 @@ class GetOlxContent:
 
     @staticmethod
     def get_next_page_url(json_data) -> Optional[str]:
-        # links = json_data.get("links")
-        # if links:
-        #     next_page = links.get("next")
-        #     if next_page:
-        #         return next_page.get("href")
+        links = json_data.get("links")
+        if links:
+            next_page = links.get("next")
+            if next_page:
+                return next_page.get("href")
 
         return None
 
@@ -142,7 +142,7 @@ def convert_time(time: str) -> datetime.datetime:
     return datetime.datetime.strptime(time, "%Y-%m-%dT%H:%M:%S%z")
 
 
-def run():
+def scrape():
     for name, url_to_scrape in URLS_TO_SCRAPE.items():
         print(f"Start scraping {name}...")
         scraper = GetOlxContent(url_to_scrape)
@@ -151,12 +151,11 @@ def run():
 
         body = ""
         for idx, object_ in enumerate(objects):
-            body += f"{idx} {object_.title} - {object_.url} - {object_.created_time} \n"
+            body += f"{idx}. {object_.title} - {object_.url} - {object_.created_time} \n"
             body += f"Localization: {object_.city}, {object_.region}, {object_.district} \n"
             body += f"Price: {object_.price.value} {object_.price.currency} \n"
             params = "\n".join([f"{param.name}: {param.label}" for param in object_.params])
             body += f"Params: {params} \n"
             body += "\n\n\n"
 
-        print(body)
-run()
+        send_email(body=body, subject=name)
