@@ -1,12 +1,37 @@
 import requests
 from typing import List, Dict, Optional
 import json
+from dataclasses import dataclass
+import datetime
 
 # Check README.md for a guide to how to get a url for specified category, location and other filters that you need
 URLS_TO_SCRAPE = {
-    "Łódź mieszkania wynajem": "https://www.olx.pl/api/v1/offers/?offset=40&limit=40&category_id=15&region_id=7&city_id=10609&filter_refiners=spell_checker&sl=18ae25cfa80x3938008f",
+    "Łódź mieszkania wynajem": "https://www.olx.pl/api/v1/offers/?offset=40&limit=40&category_id=15&sort_by=created_at%3Adesc&filter_refiners=spell_checker&sl=18ae25cfa80x3938008f",
 
 }
+
+
+@dataclass
+class Params:
+    name: str
+    label: str
+
+
+@dataclass
+class Price:
+    value: float
+    currency: str
+    negotiable: bool
+
+
+@dataclass
+class Object:
+    url: str
+    title: str
+    created_time: datetime.datetime
+    city: Optional[str] = None
+    district: Optional[str] = None
+    region: Optional[str] = None
 
 
 class GetOlxContent:
@@ -44,3 +69,5 @@ class GetOlxContent:
                 return next_page.get("href")
 
         return None
+
+# def parse_data(data: List[Dict]) -> List[]
