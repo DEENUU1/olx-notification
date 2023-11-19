@@ -11,7 +11,6 @@
 <div align="center">
 
   <h2 align="center">OLX Notification</h3>
-
   <p align="center">
     Get your daily offers on email.
     <br />
@@ -26,6 +25,7 @@
   </a>
 </div>
 
+<img src="assets/aws.png"  alt="aws"/>
 <img src="assets/excel.png"  alt="excel data"/>
 
 
