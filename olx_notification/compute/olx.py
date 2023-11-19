@@ -203,9 +203,9 @@ def scrape(name, url_to_scrape) -> None:
         )
 
     df = pandas.DataFrame(dicts)
-    df.to_excel("olx.xlsx", index=False)
+    df.to_excel("/tmp/olx.xlsx", index=False)
 
-    send_email(filename="olx.xlsx", subject=name)
+    send_email(filename="/tmp/olx.xlsx", subject=name)
 
 
 def run() -> bool:
