@@ -81,9 +81,9 @@ def parse_params(params) -> Tuple[List[Optional[Params]], Optional[Price]]:
         key, label = param["key"], param["value"]["label"]
         if key == "price":
             price = Price(
-                value=param["value"]["value"],
-                currency=param["value"]["currency"],
-                negotiable=param["value"]["negotiable"]
+                value=param.get("value", {}).get("value"),
+                currency=param.get("value", {}).get("currency"),
+                negotiable=param.get("value", {}).get("negotiable")
             )
 
         params_list.append(
@@ -100,14 +100,36 @@ def parse_data(data: List[Dict]) -> List[Object]:
     objects = []
     for item in data:
         for offer in item["data"]:
+            params, price = parse_params(offer["params"])
+
             object_ = Object(
                 url=offer["url"],
                 title=offer["title"],
                 created_time=offer["created_time"],
-                city=offer["location"]["city"]["name"],
-                district=offer["location"]["district"]["name"],
-                region=offer["location"]["region"]["name"]
+                city=offer.get("location", {}).get("city", {}).get("name"),
+                district=offer.get("location", {}).get("district", {}).get("name"),
+                region=offer.get("location", {}).get("region", {}).get("name"),
+                price=price,
+                params=params
             )
             objects.append(object_)
 
     return objects
+
+
+def convert_time(time: str) -> datetime.datetime:
+    return datetime.datetime.strptime(time, "%Y-%m-%dT%H:%M:%S%z")
+
+def run():
+    for name, url_to_scrape in URLS_TO_SCRAPE.items():
+        print(f"Start scraping {name}...")
+        scraper = GetOlxContent(url_to_scrape)
+        data = scraper.fetch_content()
+        objects = parse_data(data)
+
+        for object in objects:
+            print(object)
+            print("\n\n")
+
+
+run()
