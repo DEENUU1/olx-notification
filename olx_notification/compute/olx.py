@@ -17,10 +17,10 @@ URLS_TO_SCRAPE = {
 # This configuration is used for sending emails by using Gmail
 smtp_server = "smtp.gmail.com"
 smtp_port = 587
-# smtp_username = os.environ["SMTP_USERNAME"]
-# smtp_password = os.environ["SMTP_PASSWORD"]
-# from_email = os.environ["FROM_EMAIL"]
-# to_email = os.environ["TO_EMAIL"]
+smtp_username = os.environ["SMTP_USERNAME"]
+smtp_password = os.environ["SMTP_PASSWORD"]
+from_email = os.environ["FROM_EMAIL"]
+to_email = os.environ["TO_EMAIL"]
 
 # The number of days from which offers are to come
 DAY_DELAY: int = 1
@@ -154,17 +154,18 @@ def scrape() -> bool:
 
         body = ""
         for idx, object_ in enumerate(objects):
-            if object_.created_time >= datetime.datetime.now() - datetime.timedelta(days=DAY_DELAY):
+            current_date = datetime.datetime.now(tz=datetime.timezone.utc)
+            if (current_date - object_.created_time).days > DAY_DELAY:
                 continue
+            else:
+                body += f"{idx}. {object_.title} - {object_.url} - {object_.created_time} \n"
+                body += f"Localization: {object_.city}, {object_.region}, {object_.district} \n"
+                body += f"Price: {object_.price.value} {object_.price.currency} \n"
+                params = "\n".join([f"{param.name}: {param.label}" for param in object_.params])
+                body += f"Params: {params} \n"
+                body += "\n\n\n"
 
-            body += f"{idx}. {object_.title} - {object_.url} - {object_.created_time} \n"
-            body += f"Localization: {object_.city}, {object_.region}, {object_.district} \n"
-            body += f"Price: {object_.price.value} {object_.price.currency} \n"
-            params = "\n".join([f"{param.name}: {param.label}" for param in object_.params])
-            body += f"Params: {params} \n"
-            body += "\n\n\n"
-        print(body)
-        # send_email(body=body, subject=name)
+        send_email(body=body, subject=name)
     return True
 
 
