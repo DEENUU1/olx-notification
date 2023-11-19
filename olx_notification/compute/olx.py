@@ -65,6 +65,7 @@ class GetOlxContent:
         get_next_page_url(json_data) -> Optional[str]: Extracts the URL of the next page from the given JSON data.
 
     """
+
     def __init__(self, url: str):
         self.main_url = url
 
