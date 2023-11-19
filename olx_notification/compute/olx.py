@@ -3,12 +3,32 @@ from typing import List, Dict, Optional, Tuple
 import json
 from dataclasses import dataclass
 import datetime
+import os
+import smtplib
 
-# Check README.md for a guide to how to get a url for specified category, location and other filters that you need
+# Check README.md for a guide to how to get an url for specified category, location and other filters that you need
 URLS_TO_SCRAPE = {
     "Łódź mieszkania wynajem": "https://www.olx.pl/api/v1/offers/?offset=40&limit=40&category_id=15&sort_by=created_at%3Adesc&filter_refiners=spell_checker&sl=18ae25cfa80x3938008f",
 
 }
+
+# Email configuration
+# Add env variables to AWS Lambda environment variables - guide in README.md
+# This configuration is used for sending emails by using Gmail
+smtp_server = "smtp.gmail.com"
+smtp_port = 587
+smtp_username = os.environ["SMTP_USERNAME"]
+smtp_password = os.environ["SMTP_PASSWORD"]
+from_email = os.environ["FROM_EMAIL"]
+to_email = os.environ["TO_EMAIL"]
+subject = "OLX scraper"
+
+
+def send_email(message: str) -> None:
+    with smtplib.SMTP(smtp_server, smtp_port) as smtp:
+        smtp.starttls()
+        smtp.login(smtp_username, smtp_password)
+        smtp.sendmail(from_email, to_email, message)
 
 
 @dataclass
@@ -64,11 +84,11 @@ class GetOlxContent:
 
     @staticmethod
     def get_next_page_url(json_data) -> Optional[str]:
-        links = json_data.get("links")
-        if links:
-            next_page = links.get("next")
-            if next_page:
-                return next_page.get("href")
+        # links = json_data.get("links")
+        # if links:
+        #     next_page = links.get("next")
+        #     if next_page:
+        #         return next_page.get("href")
 
         return None
 
@@ -105,7 +125,7 @@ def parse_data(data: List[Dict]) -> List[Object]:
             object_ = Object(
                 url=offer["url"],
                 title=offer["title"],
-                created_time=offer["created_time"],
+                created_time=convert_time(offer["created_time"]),
                 city=offer.get("location", {}).get("city", {}).get("name"),
                 district=offer.get("location", {}).get("district", {}).get("name"),
                 region=offer.get("location", {}).get("region", {}).get("name"),
@@ -119,6 +139,7 @@ def parse_data(data: List[Dict]) -> List[Object]:
 
 def convert_time(time: str) -> datetime.datetime:
     return datetime.datetime.strptime(time, "%Y-%m-%dT%H:%M:%S%z")
+
 
 def run():
     for name, url_to_scrape in URLS_TO_SCRAPE.items():
