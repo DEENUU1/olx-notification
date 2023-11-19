@@ -1,10 +1,11 @@
 import requests
 from typing import List, Dict, Optional, Tuple
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 import datetime
 import os
 import smtplib
+import pandas
 
 # Check README.md for a guide to how to get an url for specified category, location and other filters that you need
 URLS_TO_SCRAPE = {
@@ -17,10 +18,10 @@ URLS_TO_SCRAPE = {
 # This configuration is used for sending emails by using Gmail
 smtp_server = "smtp.gmail.com"
 smtp_port = 587
-smtp_username = os.environ["SMTP_USERNAME"]
-smtp_password = os.environ["SMTP_PASSWORD"]
-from_email = os.environ["FROM_EMAIL"]
-to_email = os.environ["TO_EMAIL"]
+# smtp_username = os.environ["SMTP_USERNAME"]
+# smtp_password = os.environ["SMTP_PASSWORD"]
+# from_email = os.environ["FROM_EMAIL"]
+# to_email = os.environ["TO_EMAIL"]
 
 # The number of days from which offers are to come
 DAY_DELAY: int = 1
@@ -36,7 +37,6 @@ class Params:
 class Price:
     value: float
     currency: str
-    negotiable: bool
 
 
 @dataclass
@@ -79,11 +79,11 @@ class GetOlxContent:
 
     @staticmethod
     def get_next_page_url(json_data) -> Optional[str]:
-        links = json_data.get("links")
-        if links:
-            next_page = links.get("next")
-            if next_page:
-                return next_page.get("href")
+        # links = json_data.get("links")
+        # if links:
+        #     next_page = links.get("next")
+        #     if next_page:
+        #         return next_page.get("href")
 
         return None
 
@@ -107,7 +107,6 @@ def parse_params(params) -> Tuple[List[Optional[Params]], Optional[Price]]:
             price = Price(
                 value=param.get("value", {}).get("value"),
                 currency=param.get("value", {}).get("currency"),
-                negotiable=param.get("value", {}).get("negotiable")
             )
 
         params_list.append(
@@ -129,7 +128,7 @@ def parse_data(data: List[Dict]) -> List[Object]:
             object_ = Object(
                 url=offer["url"],
                 title=offer["title"],
-                created_time=convert_time(offer["created_time"]),
+                created_time=offer["created_time"],
                 city=offer.get("location", {}).get("city", {}).get("name"),
                 district=offer.get("location", {}).get("district", {}).get("name"),
                 region=offer.get("location", {}).get("region", {}).get("name"),
@@ -141,10 +140,6 @@ def parse_data(data: List[Dict]) -> List[Object]:
     return objects
 
 
-def convert_time(time: str) -> datetime.datetime:
-    return datetime.datetime.strptime(time, "%Y-%m-%dT%H:%M:%S%z")
-
-
 def scrape() -> bool:
     for name, url_to_scrape in URLS_TO_SCRAPE.items():
         print(f"Start scraping {name}...")
@@ -152,25 +147,37 @@ def scrape() -> bool:
         data = scraper.fetch_content()
         objects = parse_data(data)
 
-        body = ""
+        dicts = []
         for idx, object_ in enumerate(objects):
-            current_date = datetime.datetime.now(tz=datetime.timezone.utc)
-            if (current_date - object_.created_time).days > DAY_DELAY:
-                continue
-            else:
-                body += f"{idx}. {object_.title} - {object_.url} - {object_.created_time} \n"
-                body += f"Localization: {object_.city}, {object_.region}, {object_.district} \n"
-                body += f"Price: {object_.price.value} {object_.price.currency} \n"
-                params = "\n".join([f"{param.name}: {param.label}" for param in object_.params])
-                body += f"Params: {params} \n"
-                body += "\n\n\n"
+            params_dict = {}
+            for param in object_.params:
+                params_dict[param.name] = param.label
 
-        send_email(body=body, subject=name)
+            dicts.append(
+                {
+                    "url": object_.url,
+                    "title": object_.title,
+                    "created_time": object_.created_time,
+                    "city": object_.city,
+                    "district": object_.district,
+                    "region": object_.region,
+                    "price_val": object_.price.value if object_.price else None,
+                    "price_cur": object_.price.currency if object_.price else None,
+                    **params_dict,
+                }
+            )
+
+        df = pandas.DataFrame(dicts)
+        df.to_excel("olx.xlsx", index=False)
+
+        # send_email(body=body, subject=name)
     return True
-
 
 def lambda_handler(event, context):
     return {
         'statusCode': 200,
         'body': json.dumps({"message": "Scraped", "status": scrape()})
     }
+
+
+scrape()

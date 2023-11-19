@@ -1,3 +1,5 @@
 aws-cdk.core
 aws-cdk.aws_lambda
 requests
+openpyxl
+pandas
