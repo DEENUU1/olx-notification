@@ -159,3 +159,10 @@ def scrape():
             body += "\n\n\n"
 
         send_email(body=body, subject=name)
+
+
+def lambda_handler(event, context):
+    return {
+        'statusCode': 200,
+        'body': json.dumps({"message": "Scraped"})
+    }

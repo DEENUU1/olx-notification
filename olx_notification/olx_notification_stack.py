@@ -1,19 +1,16 @@
-from aws_cdk import (
-    # Duration,
-    Stack,
-    # aws_sqs as sqs,
-)
-from constructs import Construct
+from aws_cdk import core as cdk
+from aws_cdk import core
+from aws_cdk import aws_lambda
 
-class OlxNotificationStack(Stack):
+class OlxNotificationStack(cdk.Stack):
 
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+    def __init__(self, scope: cdk.Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # The code that defines your stack goes here
-
-        # example resource
-        # queue = sqs.Queue(
-        #     self, "OlxNotificationQueue",
-        #     visibility_timeout=Duration.seconds(300),
-        # )
+        scraper = aws_lambda.Function(
+            self,
+            id="OlxNotification",
+            code=aws_lambda.Code.from_asset("olx_notification/compute/"),
+            handler="scrape.lambda_handler",
+            runtime=aws_lambda.Runtime.PYTHON_3_9
+        )
