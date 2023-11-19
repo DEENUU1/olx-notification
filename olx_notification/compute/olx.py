@@ -32,6 +32,8 @@ class Object:
     city: Optional[str] = None
     district: Optional[str] = None
     region: Optional[str] = None
+    price: Optional[Price] = None
+    params: Optional[List[Params]] = None
 
 
 class GetOlxContent:
@@ -70,4 +72,19 @@ class GetOlxContent:
 
         return None
 
-# def parse_data(data: List[Dict]) -> List[]
+
+def parse_data(data: List[Dict]) -> List[Object]:
+    objects = []
+    for item in data:
+        for offer in item["data"]:
+            object_ = Object(
+                url=offer["url"],
+                title=offer["title"],
+                created_time=offer["created_time"],
+                city=offer["location"]["city"]["name"],
+                district=offer["location"]["district"]["name"],
+                region=offer["location"]["region"]["name"]
+            )
+            objects.append(object_)
+
+    return objects
